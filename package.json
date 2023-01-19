@@ -1,7 +1,7 @@
 {
-  "name": "ts-package-template",
+  "name": "ts-cli-template",
   "version": "1.0.0",
-  "description": "A template for TypeScript packages",
+  "description": "A template for TypeScript CLI projects",
   "author": "Seb Aebischer",
   "license": "MIT",
   "main": "dist/index.js",
@@ -14,6 +14,9 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "ts-cli-template": "dist/cli/index.js"
   },
   "scripts": {
     "prepare": "npm run clean && npm run build",
@@ -42,8 +45,12 @@
     "inquirer": "^8.2.4",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
+    "stdout-stderr": "^0.1.13",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.2",
     "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "commander": "^10.0.0"
   }
 }

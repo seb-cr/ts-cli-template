@@ -1,6 +1,6 @@
-# TypeScript package template
+# TypeScript CLI template
 
-A template for TypeScript packages.
+A template for TypeScript CLI projects.
 
 ## Usage
 
