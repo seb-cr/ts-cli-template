@@ -21,10 +21,9 @@ branches:
   - { name: 'alpha', prerelease: true }
 `;
 
-const GITHUB_ACTIONS_RELEASE_JOB = (branch: string) => `
+const GITHUB_ACTIONS_RELEASE_JOB = `
   release:
     name: Release
-    if: github.ref == 'refs/heads/${branch}'
     needs:
       - test
       - lint
@@ -36,7 +35,7 @@ const GITHUB_ACTIONS_RELEASE_JOB = (branch: string) => `
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: 18
 
       - name: Configure npm cache
         run: npm config set cache "$(pwd)/.npm-cache"
@@ -46,9 +45,6 @@ const GITHUB_ACTIONS_RELEASE_JOB = (branch: string) => `
           path: .npm-cache
           key: npm-cache-\${{ hashFiles('package-lock.json') }}
           restore-keys: npm-cache-
-
-      - name: Use npm@8
-        run: npm i -g npm@8
 
       - name: Install dependencies
         run: npm ci
@@ -85,8 +81,7 @@ export async function setUpSemanticRelease(answers: Answers): Promise<string[]> 
   const branch = answers.semanticReleaseBranch;
 
   await step('Installing Semantic Release', async () => {
-    // v20 requires Node >=18
-    await sh('npm i -D semantic-release@19');
+    await sh('npm i -D semantic-release');
   });
 
   // `semantic-release` looks for the `master` branch by default
@@ -100,7 +95,7 @@ export async function setUpSemanticRelease(answers: Answers): Promise<string[]> 
 
   await step('Adding release job to .github/workflows/main.yml', () => {
     let content = readFileSync('.github/workflows/main.yml').toString();
-    content += GITHUB_ACTIONS_RELEASE_JOB(branch);
+    content += GITHUB_ACTIONS_RELEASE_JOB;
     writeFileSync('.github/workflows/main.yml', content);
   });
 
