@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/seb-cr/ts-package-template.git"
+    "url": "git+https://github.com/seb-cr/ts-cli-template.git"
   },
   "files": [
     "dist"

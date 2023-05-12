@@ -76,7 +76,7 @@ jobs:
 export async function setUpSemanticRelease(answers: Answers): Promise<string[]> {
   const gitRemote = answers.packageRepository;
   const isGitHubRepo = gitRemote.includes('github.com')
-    && !gitRemote.includes('seb-cr/ts-package-template');
+    && !gitRemote.includes('seb-cr/ts-cli-template');
 
   const branch = answers.semanticReleaseBranch;
 
