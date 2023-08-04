@@ -43,73 +43,74 @@ inquirer.prompt = async (questions: Question[], answers: any) => {
 };
 
 let baseBranch: string;
-let hadStagedChanges = false;
-let hadUnstagedChanges = false;
 
 function saveGitState() {
-  before('save base branch name', async () => {
-    baseBranch = await sh('git rev-parse --abbrev-ref HEAD');
+  before('save uncommitted changes', async () => {
+    await sh('git commit --allow-empty -m "wip: staged changes"');
+    await sh('git add .');
+    await sh('git commit --allow-empty -m "wip: unstaged changes"');
   });
 
-  before('save uncommitted changes', async () => {
-    try {
-      await sh('git commit -m "wip: staged changes"');
-      hadStagedChanges = true;
-    } catch {
-      hadStagedChanges = false;
+  before('save base branch name', async () => {
+    baseBranch = await sh('git rev-parse --abbrev-ref HEAD');
+    if (baseBranch === 'HEAD') {
+      // detached HEAD state -- use commit hash instead
+      baseBranch = await sh('git rev-parse HEAD');
     }
-
-    try {
-      await sh('git commit -a -m "wip: unstaged changes"');
-      hadUnstagedChanges = true;
-    } catch {
-      hadUnstagedChanges = false;
-    }
+    // for debugging -- see README.md#known-issues
+    console.log('git status:', await sh('git status'));
+    console.log('git log:', await sh('git log'));
+    console.log('baseBranch:', baseBranch);
   });
 
   after('restore uncommitted changes', async () => {
-    if (hadUnstagedChanges) {
-      // safety check
-      const log = await sh('git log --oneline -1');
-      if (!log.includes('wip: unstaged changes')) {
-        console.log(chalk.yellowBright('Unexpected commit when trying to restore unstaged changes!'));
-        return;
-      }
+    const log = await sh('git log --oneline -2');
+    const [firstCommit, secondCommit] = log.split('\n');
 
-      // uncommit and unstage
-      await sh('git reset --soft HEAD~1');
-      await sh('git reset HEAD');
+    // restore unstaged changes
+    if (!firstCommit.includes('wip: unstaged changes')) {
+      console.log(chalk.yellowBright('Unexpected commit when trying to restore unstaged changes!'));
+      return;
     }
+    await sh('git reset --soft HEAD~1');
+    await sh('git reset HEAD');
 
-    if (hadStagedChanges) {
-      const log = await sh('git log --oneline -1');
-      if (!log.includes('wip: staged changes')) {
-        console.log(chalk.yellowBright('Unexpected commit when trying to restore staged changes!'));
-        return;
-      }
-
-      // uncommit and leave staged
-      await sh('git reset --soft HEAD~1');
+    // restore staged changes
+    if (!secondCommit.includes('wip: staged changes')) {
+      console.log(chalk.yellowBright('Unexpected commit when trying to restore staged changes!'));
+      return;
     }
+    await sh('git reset --soft HEAD~1');
   });
 }
 
-function useTempGitUsername(): string {
+function useTempGitAuthor(): string {
   const name = `Test user ${Math.floor(Math.random() * 1E6)}`;
+  const email = 'test@example.com';
   let oldName: string;
+  let oldEmail: string;
 
-  before('configure git username', async () => {
+  before('configure git author', async () => {
     try {
       oldName = await sh('git config user.name');
     } catch {
       oldName = '';
     }
+    try {
+      oldEmail = await sh('git config user.email');
+    } catch {
+      oldEmail = '';
+    }
     await sh(`git config user.name "${name}"`);
+    await sh(`git config user.email "${email}"`);
   });
 
-  after('restore git username', async () => {
+  after('restore git author', async () => {
     if (oldName) {
       await sh(`git config user.name "${oldName}"`);
+    }
+    if (oldEmail) {
+      await sh(`git config user.email "${oldEmail}"`);
     }
   });
 
@@ -151,13 +152,18 @@ async function run(answers: Partial<Answers>): Promise<string> {
     console.log = oldConsoleLog;
     chalk.level = oldChalkLevel;
   }
-  return output.map((line) => `${line.map((it) => `${it}`).join(' ')}\n`).join('');
+  const result = output
+    .map((line) => `${line.map((it) => `${it}`).join(' ')}\n`)
+    .join('');
+  // log it for debugging when something goes wrong
+  console.log(`output: ${result}\n`);
+  return result;
 }
 
 describe('setup script', () => {
-  saveGitState();
+  const author = useTempGitAuthor();
 
-  const author = useTempGitUsername();
+  saveGitState();
 
   describe('defaults', () => {
     const branch = useTempGitBranch();
@@ -191,6 +197,10 @@ describe('setup script', () => {
     it('should default repository to the git remote', async () => {
       const gitRemote = await sh('git remote get-url origin');
       expect(result).to.contain(`? Repository: ${gitRemote}\n`);
+    });
+
+    it('should default package access to "public"', async () => {
+      expect(result).to.contain('? Package access: public\n');
     });
 
     it('should default the release branch to the current git branch', () => {
@@ -231,6 +241,7 @@ describe('setup script', () => {
       description: 'An example package',
       license: 'example-license',
       repository: 'https://example.com/package',
+      access: 'restricted',
     };
 
     useTempGitBranch();
@@ -245,6 +256,7 @@ describe('setup script', () => {
         packageDescription: params.description,
         packageLicense: params.license,
         packageRepository: params.repository,
+        packagePublishConfigAccess: params.access,
         semanticRelease: false,
         commit: false,
       });
@@ -272,6 +284,10 @@ describe('setup script', () => {
 
     it('should set repository', () => {
       expect(packageJson.repository.url).to.equal(`git+${params.repository}`);
+    });
+
+    it('should set package access', () => {
+      expect(packageJson.publishConfig.access).to.equal(params.access);
     });
   });
 
