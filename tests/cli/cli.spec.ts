@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { invoke } from './invoke';
+import { invoke } from './invoke.js';
 
 describe('cli', () => {
   context('without a name specified', () => {

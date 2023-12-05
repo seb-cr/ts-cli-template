@@ -1,12 +1,14 @@
 #!/usr/bin/env npx ts-node
-import { ExecOptions, exec } from 'child_process';
-import { readFileSync, rmSync, writeFileSync } from 'fs';
-import { basename, dirname } from 'path';
+import { ExecOptions, exec } from 'node:child_process';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
+import esMain from 'es-main';
 import inquirer from 'inquirer';
 
-import { setUpSemanticRelease } from './set-up-semantic-release';
+import { setUpSemanticRelease } from './set-up-semantic-release.js';
 
 export type Answers = {
   packageName: string;
@@ -53,11 +55,10 @@ export async function step(name: string, action: () => void | Promise<void>) {
 }
 
 export async function setup(initialAnswers?: Partial<Answers>) {
-  const rootDir = dirname(__dirname);
+  const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
   process.chdir(rootDir);
 
-  // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-  const packageJson = require('../package.json');
+  const packageJson = JSON.parse(readFileSync('package.json').toString());
   const gitUsername = await sh('git config user.name');
   const gitRemote = await sh('git remote get-url origin');
   const gitBranch = await sh('git rev-parse --abbrev-ref HEAD');
@@ -194,7 +195,7 @@ export async function setup(initialAnswers?: Partial<Answers>) {
 }
 
 /* istanbul ignore if */
-if (module === require.main) {
+if (esMain(import.meta)) {
   setup().catch((error) => {
     console.error(error);
     process.exitCode = 1;

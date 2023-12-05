@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { Octokit } from '@octokit/rest';
 
@@ -7,7 +7,7 @@ import {
   sh,
   step,
   warn,
-} from './setup';
+} from './setup.js';
 
 const SEMANTIC_RELEASE_CONFIG = (branch: string) => `# Semantic Release config
 # See https://semantic-release.gitbook.io/semantic-release/usage/configuration

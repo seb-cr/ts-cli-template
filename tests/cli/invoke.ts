@@ -1,6 +1,6 @@
 import { stderr, stdout } from 'stdout-stderr';
 
-import { cli } from '@/src/cli';
+import { cli } from '@/src/cli/index.js';
 
 export interface InvokeResult {
   exitCode: number;

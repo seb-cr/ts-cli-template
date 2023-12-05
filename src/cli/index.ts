@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from 'commander';
+import esMain from 'es-main';
 
-import { greet } from '..';
+import { greet } from '../index.js';
+import pkg from '../package.js';
 
 type CliOptions = {
   name: string;
@@ -13,8 +15,7 @@ type CliOptions = {
  * @param args
  */
 function getOptions(args: string[]): CliOptions {
-  // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-  const { version, description, bin } = require('../../package.json');
+  const { version, description, bin } = pkg;
   const name = Object.keys(bin)[0];
 
   const cmd = new Command()
@@ -60,6 +61,6 @@ export async function cli(args: string[]): Promise<void> {
 
 // this can't be covered by tests -- they call `cli` directly
 /* istanbul ignore next */
-if (module === require.main) {
+if (esMain(import.meta)) {
   cli(process.argv.slice(2));
 }
